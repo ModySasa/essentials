@@ -61,15 +61,13 @@ const String USER_PASS_KEY = 'userPass';
 const String USER_PHONE_KEY = 'userPhone';
 
 Future setSharedPref({
-  @required List<String> keys,
-  @required List<dynamic> values,
+  @required Map<String, dynamic> shared,
 }) async {
   return SharedPreferences.getInstance().then((sharedPref) {
     prefs = sharedPref;
-    keys.forEach((shared) {
-      if (sharedPref.containsKey(shared)) {
-        int index = keys.indexOf(shared);
-        values[index] = sharedPref.get(shared);
+    shared.forEach((key, value) {
+      if (sharedPref.containsKey(key)) {
+        value = sharedPref.get(key);
       }
     });
     if (prefs.containsKey(USER_LANG_KEY)) {
@@ -128,13 +126,11 @@ Future<void> showNotification({
 }
 
 Future setUpApp({
-  @required List<String> keys,
-  @required List<dynamic> values,
+  @required Map<String, dynamic> shared,
 }) async {
   WidgetsFlutterBinding.ensureInitialized();
   await setSharedPref(
-    values: values,
-    keys: keys,
+    shared: shared,
   );
   var initializationSettingsAndroid = AndroidInitializationSettings('ic_logo_bringero');
   var initializationSettingsIOS = IOSInitializationSettings(onDidReceiveLocalNotification: (int id, String title, String body, String payload) async {
@@ -155,10 +151,9 @@ Future setUpApp({
 /// This "Headless Task" is run when app is terminated.
 void backgroundFetchHeadlessTask(
   String taskId, {
-  @required List<String> keys,
-  @required List<dynamic> values,
+  @required Map<String, dynamic> shared,
 }) async {
-  await setSharedPref(values: values, keys: keys).then((_) {
+  await setSharedPref(shared: shared).then((_) {
     switch (taskId) {
       default:
         print(taskId);
@@ -218,8 +213,7 @@ void firebaseCloudMessagingListeners() {
 
 Future<void> initPlatformState(
   doSomeThing, {
-  @required List<String> keys,
-  @required List<dynamic> values,
+  @required Map<String,dynamic> shared,
   bool mounted,
 }) async {
   // Configure BackgroundFetch.
@@ -237,7 +231,7 @@ Future<void> initPlatformState(
         requiredNetworkType: NetworkType.ANY,
       ), (String taskId) async {
     if (prefs == null) {
-      await setSharedPref(values: values, keys: keys).then((_) {
+      await setSharedPref(shared:shared).then((_) {
         doSomeThing(taskId);
       });
     } else {
