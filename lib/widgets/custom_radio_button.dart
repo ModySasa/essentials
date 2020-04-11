@@ -1,5 +1,4 @@
 import 'package:essentials/values_and_localization/localized.dart';
-import 'package:essentials/values_and_localization/strings.dart';
 import 'package:flutter/material.dart';
 
 class MyCustomRadioGroup extends StatefulWidget {
