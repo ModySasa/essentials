@@ -137,6 +137,13 @@ Future setUpApp({
   await setSharedPref(
     shared: shared,
   );
+  PackageInfo packageInfo = await PackageInfo.fromPlatform();
+
+  appName = packageInfo.appName;
+  packageName = packageInfo.packageName;
+  version = packageInfo.version;
+  buildNumber = packageInfo.buildNumber;
+
   var initializationSettingsAndroid = AndroidInitializationSettings('ic_logo_bringero');
   var initializationSettingsIOS = IOSInitializationSettings(onDidReceiveLocalNotification: (int id, String title, String body, String payload) async {
     didReceiveLocalNotificationSubject.add(ReceivedNotification(id: id, title: title, body: body, payload: payload));
@@ -151,12 +158,6 @@ Future setUpApp({
   // Register to receive BackgroundFetch events after app is terminated.
   // Requires {stopOnTerminate: false, enableHeadless: true}
   BackgroundFetch.registerHeadlessTask(backgroundFetchHeadlessTask);
-  PackageInfo.fromPlatform().then((PackageInfo packageInfo) {
-    appName = packageInfo.appName;
-    packageName = packageInfo.packageName;
-    version = packageInfo.version;
-    buildNumber = packageInfo.buildNumber;
-  });
 }
 
 /// This "Headless Task" is run when app is terminated.
@@ -224,7 +225,7 @@ void firebaseCloudMessagingListeners() {
 
 Future<void> initPlatformState(
   doSomeThing, {
-  @required Map<String,dynamic> shared,
+  @required Map<String, dynamic> shared,
   bool mounted,
 }) async {
   // Configure BackgroundFetch.
@@ -242,7 +243,7 @@ Future<void> initPlatformState(
         requiredNetworkType: NetworkType.ANY,
       ), (String taskId) async {
     if (prefs == null) {
-      await setSharedPref(shared:shared).then((_) {
+      await setSharedPref(shared: shared).then((_) {
         doSomeThing(taskId);
       });
     } else {
