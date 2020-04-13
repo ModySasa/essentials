@@ -9,6 +9,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:package_info/package_info.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -51,6 +52,10 @@ String fireBaseToken;
 String userPhone;
 String userFirebaseKey = '+2$userPhone';
 String userPass;
+String appName;
+String packageName;
+String version;
+String buildNumber;
 
 const String FIREBASE_TOKEN_KEY = 'userFireBaseToken';
 const String REMEMBER_ME_KEY = 'REMEMBER_ME';
@@ -146,6 +151,12 @@ Future setUpApp({
   // Register to receive BackgroundFetch events after app is terminated.
   // Requires {stopOnTerminate: false, enableHeadless: true}
   BackgroundFetch.registerHeadlessTask(backgroundFetchHeadlessTask);
+  PackageInfo.fromPlatform().then((PackageInfo packageInfo) {
+    appName = packageInfo.appName;
+    packageName = packageInfo.packageName;
+    version = packageInfo.version;
+    buildNumber = packageInfo.buildNumber;
+  });
 }
 
 /// This "Headless Task" is run when app is terminated.
