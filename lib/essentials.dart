@@ -9,9 +9,11 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:install_plugin/install_plugin.dart';
 import 'package:package_info/package_info.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 final FirebaseMessaging _firebaseMessaging = FirebaseMessaging();
@@ -56,6 +58,8 @@ String appName;
 String packageName;
 String version;
 String buildNumber;
+String currentBuildNumber;
+String currentAppLink;
 
 const String FIREBASE_TOKEN_KEY = 'userFireBaseToken';
 const String REMEMBER_ME_KEY = 'REMEMBER_ME';
@@ -255,4 +259,25 @@ Future<void> initPlatformState(
   });
   //TODO schedule background tasks here
   if (!mounted) return;
+}
+
+void onClickInstallApk(String _apkFilePath) async {
+  if (_apkFilePath.isEmpty) {
+    print('make sure the apk file is set');
+    return;
+  }
+
+  Map<Permission, PermissionStatus> statuses = await [
+    Permission.storage,
+  ].request();
+
+  if (statuses[Permission.storage] == PermissionStatus.granted) {
+    InstallPlugin.installApk(_apkFilePath, packageName).then((result) {
+      customPrint(values: ['install apk $result']);
+    }).catchError((error) {
+      customPrint(values: ['install apk error: $error']);
+    });
+  } else {
+    customPrint(values: ['Permission request fail!']);
+  }
 }
