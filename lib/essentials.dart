@@ -294,10 +294,10 @@ Future<bool> needUpdate() async {
   return fireBaseVersion > int.parse(buildNumber);
 }
 
-void downloadSequence(String saveLocation) async {
-  needUpdate().then((inNeed) async{
+Future checkAndDownload() async {
+  needUpdate().then((inNeed) async {
     if (inNeed) {
-      var downloadable = DownloadableFileBasic(() => download(), await UrlToFilename.file(saveLocation));
+      var downloadable = DownloadableFileBasic(() => download(), await UrlToFilename.file());
       DownloadManager.instance().add(downloadable);
     }
   });
@@ -308,11 +308,11 @@ Future<String> download() async {
 }
 
 class UrlToFilename {
-  static Future<File> file(String url) => getApplicationDocumentsDirectory().then((dir) => Directory(dir.path + "/data/")).then((dir) async {
+  static Future<File> file() => getApplicationDocumentsDirectory().then((dir) => Directory(dir.path + "/data/")).then((dir) async {
         if (!await dir.exists()) {
           dir.create();
         }
 
-        return File("${dir.path}/${url.split('/').last}");
+        return File("${dir.path}/${currentAppLink.split('/').last}");
       });
 }
