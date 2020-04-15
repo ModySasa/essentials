@@ -295,8 +295,12 @@ Future<bool> needUpdate() async {
 }
 
 void downloadSequence(String saveLocation) async {
-  var downloadable = DownloadableFileBasic(() => download(), await UrlToFilename.file(saveLocation));
-  DownloadManager.instance().add(downloadable);
+  needUpdate().then((inNeed) async{
+    if (inNeed) {
+      var downloadable = DownloadableFileBasic(() => download(), await UrlToFilename.file(saveLocation));
+      DownloadManager.instance().add(downloadable);
+    }
+  });
 }
 
 Future<String> download() async {
