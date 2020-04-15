@@ -1,6 +1,8 @@
 library essentials;
 
 import 'dart:io';
+import 'dart:isolate';
+import 'dart:ui';
 
 import 'package:background_fetch/background_fetch.dart';
 import 'package:essentials/values_and_localization/localized.dart';
@@ -8,6 +10,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:install_plugin/install_plugin.dart';
 import 'package:package_info/package_info.dart';
@@ -144,6 +147,7 @@ Future setUpApp({
   await setSharedPref(
     shared: shared,
   );
+  await FlutterDownloader.initialize();
   PackageInfo packageInfo = await PackageInfo.fromPlatform();
 
   appName = packageInfo.appName;
@@ -287,4 +291,35 @@ void onClickInstallApk(String _apkFilePath) async {
 
 Future<bool> needUpdate() async {
   return fireBaseVersion > int.parse(buildNumber);
+}
+
+getTaskId(String saveLocation) async {
+  await FlutterDownloader.enqueue(
+    url: currentAppLink,
+    savedDir: saveLocation,
+    showNotification: true, // show download progress in status bar (for Android)
+    openFileFromNotification: true, // click on notification to open downloaded file (for Android)
+  );
+}
+
+void checkAndDownload(String saveLocation) async {
+  if (await needUpdate()) {
+    getTaskId(saveLocation);
+  }
+}
+
+initDownload() {
+  IsolateNameServer.registerPortWithName(ReceivePort().sendPort, 'downloader_send_port');
+  ReceivePort().listen((dynamic data) {
+    String id = data[0];
+    DownloadTaskStatus status = data[1];
+    int progress = data[2];
+  });
+
+  FlutterDownloader.registerCallback(downloadCallback);
+}
+
+void downloadCallback(String id, DownloadTaskStatus status, int progress) {
+  final SendPort send = IsolateNameServer.lookupPortByName('downloader_send_port');
+  send.send([id, status, progress]);
 }
