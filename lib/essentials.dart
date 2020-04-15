@@ -302,7 +302,7 @@ getTaskId(String saveLocation) async {
   );
 }
 
-void checkAndDownload(String saveLocation) async {
+Future checkAndDownload(String saveLocation) async {
   if (await needUpdate()) {
     getTaskId(saveLocation);
   }
