@@ -61,8 +61,8 @@ String buildNumber;
 String currentAppLink;
 int fireBaseVersion;
 
-const String FIREBASE_VERSION_KEY = 'appVersion';
-const String FIREBASE_LINK_KEY = 'appLink';
+const String FIREBASE_VERSION_KEY = 'versionNumber';
+const String FIREBASE_LINK_KEY = 'appURL';
 
 const String FIREBASE_TOKEN_KEY = 'userFireBaseToken';
 const String REMEMBER_ME_KEY = 'REMEMBER_ME';
