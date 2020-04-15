@@ -1,19 +1,20 @@
 library essentials;
 
 import 'dart:io';
-import 'dart:isolate';
 import 'dart:ui';
 
 import 'package:background_fetch/background_fetch.dart';
+import 'package:download_manager/download_manager.dart';
 import 'package:essentials/values_and_localization/localized.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_downloader/flutter_downloader.dart';
+import 'package:http/http.dart' as http;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:install_plugin/install_plugin.dart';
 import 'package:package_info/package_info.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -147,7 +148,7 @@ Future setUpApp({
   await setSharedPref(
     shared: shared,
   );
-  await FlutterDownloader.initialize();
+
   PackageInfo packageInfo = await PackageInfo.fromPlatform();
 
   appName = packageInfo.appName;
@@ -268,8 +269,8 @@ Future<void> initPlatformState(
   if (!mounted) return;
 }
 
-void onClickInstallApk(String _apkFilePath) async {
-  if (_apkFilePath.isEmpty) {
+void onClickInstallApk(String saveLocation) async {
+  if (saveLocation.isEmpty) {
     print('make sure the apk file is set');
     return;
   }
@@ -279,7 +280,7 @@ void onClickInstallApk(String _apkFilePath) async {
   ].request();
 
   if (statuses[Permission.storage] == PermissionStatus.granted) {
-    InstallPlugin.installApk(_apkFilePath, packageName).then((result) {
+    InstallPlugin.installApk(saveLocation, packageName).then((result) {
       customPrint(values: ['install apk $result']);
     }).catchError((error) {
       customPrint(values: ['install apk error: $error']);
@@ -293,33 +294,21 @@ Future<bool> needUpdate() async {
   return fireBaseVersion > int.parse(buildNumber);
 }
 
-getTaskId(String saveLocation) async {
-  await FlutterDownloader.enqueue(
-    url: currentAppLink,
-    savedDir: saveLocation,
-    showNotification: true, // show download progress in status bar (for Android)
-    openFileFromNotification: true, // click on notification to open downloaded file (for Android)
-  );
+void downloadSequence(String saveLocation) async {
+  var downloadable = DownloadableFileBasic(() => download(), await UrlToFilename.file(saveLocation));
+  DownloadManager.instance().add(downloadable);
 }
 
-Future checkAndDownload(String saveLocation) async {
-  if (await needUpdate()) {
-    getTaskId(saveLocation);
-  }
+Future<String> download() async {
+  return (await http.get(currentAppLink)).body;
 }
 
-initDownload() {
-  IsolateNameServer.registerPortWithName(ReceivePort().sendPort, 'downloader_send_port');
-  ReceivePort().listen((dynamic data) {
-    String id = data[0];
-    DownloadTaskStatus status = data[1];
-    int progress = data[2];
-  });
+class UrlToFilename {
+  static Future<File> file(String url) => getApplicationDocumentsDirectory().then((dir) => Directory(dir.path + "/data/")).then((dir) async {
+        if (!await dir.exists()) {
+          dir.create();
+        }
 
-  FlutterDownloader.registerCallback(downloadCallback);
-}
-
-void downloadCallback(String id, DownloadTaskStatus status, int progress) {
-  final SendPort send = IsolateNameServer.lookupPortByName('downloader_send_port');
-  send.send([id, status, progress]);
+        return File("${dir.path}/${url.split('/').last}");
+      });
 }
