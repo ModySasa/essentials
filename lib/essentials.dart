@@ -58,8 +58,11 @@ String appName;
 String packageName;
 String version;
 String buildNumber;
-String currentBuildNumber;
 String currentAppLink;
+int fireBaseVersion;
+
+const String FIREBASE_VERSION_KEY = 'appVersion';
+const String FIREBASE_LINK_KEY = 'appLink';
 
 const String FIREBASE_TOKEN_KEY = 'userFireBaseToken';
 const String REMEMBER_ME_KEY = 'REMEMBER_ME';
@@ -280,4 +283,8 @@ void onClickInstallApk(String _apkFilePath) async {
   } else {
     customPrint(values: ['Permission request fail!']);
   }
+}
+
+Future<bool> needUpdate() async {
+  return fireBaseVersion > int.parse(buildNumber);
 }
