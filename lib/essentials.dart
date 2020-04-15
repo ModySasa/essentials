@@ -48,23 +48,23 @@ void customPrint({
   });
   if (!printSingle) print(printedVal);
 }
-class Essentials {
- static SharedPreferences prefs;
- static bool notifyMe;
- static bool firstTime;
- static FirebaseApp app;
- static FirebaseDatabase database;
- static String fireBaseToken;
- static String userPhone;
- static String userFirebaseKey = '+2$userPhone';
- static String userPass;
- static String appName;
- static String packageName;
- static String version;
- static String buildNumber;
- static String currentAppLink;
- static int fireBaseVersion;
-}
+
+SharedPreferences prefs;
+bool notifyMe;
+bool firstTime;
+FirebaseApp app;
+FirebaseDatabase database;
+String fireBaseToken;
+String userPhone;
+String userFirebaseKey = '+2$userPhone';
+String userPass;
+String appName;
+String packageName;
+String version;
+String buildNumber;
+String currentAppLink;
+int fireBaseVersion;
+
 const String FIREBASE_VERSION_KEY = 'versionNumber';
 const String FIREBASE_LINK_KEY = 'appURL';
 
@@ -80,30 +80,30 @@ Future setSharedPref({
   @required Map<String, dynamic> shared,
 }) async {
   return SharedPreferences.getInstance().then((sharedPref) {
-    Essentials.prefs = sharedPref;
+    prefs = sharedPref;
     shared.forEach((key, value) {
       if (sharedPref.containsKey(key)) {
         value = sharedPref.get(key);
       }
     });
-    if (Essentials.prefs.containsKey(USER_LANG_KEY)) {
-      Localized.userLangCode = Essentials.prefs.getString(USER_LANG_KEY);
+    if (prefs.containsKey(USER_LANG_KEY)) {
+      Localized.userLangCode = prefs.getString(USER_LANG_KEY);
     } else {
       Localized.userLangCode = "en";
     }
-    if (Essentials.prefs.containsKey(USER_PHONE_KEY)) {
-      Essentials.userPhone = Essentials.prefs.getString(USER_PHONE_KEY);
+    if (prefs.containsKey(USER_PHONE_KEY)) {
+      userPhone = prefs.getString(USER_PHONE_KEY);
     }
-    if (Essentials.prefs.containsKey(USER_PASS_KEY)) {
-      Essentials.userPass = Essentials.prefs.getString(USER_PASS_KEY);
+    if (prefs.containsKey(USER_PASS_KEY)) {
+      userPass = prefs.getString(USER_PASS_KEY);
     }
-    if (Essentials.prefs.containsKey(FIREBASE_TOKEN_KEY)) {
-Essentials.      fireBaseToken =Essentials. prefs.getString(FIREBASE_TOKEN_KEY);
+    if (prefs.containsKey(FIREBASE_TOKEN_KEY)) {
+      fireBaseToken = prefs.getString(FIREBASE_TOKEN_KEY);
     }
-    if (Essentials.prefs.containsKey(NOTIFY_ME_KEY)) {
-      Essentials.notifyMe = Essentials.prefs.getBool(NOTIFY_ME_KEY);
+    if (prefs.containsKey(NOTIFY_ME_KEY)) {
+      notifyMe = prefs.getBool(NOTIFY_ME_KEY);
     } else {
-      Essentials.notifyMe = true;
+      notifyMe = true;
     }
   });
 }
@@ -137,8 +137,8 @@ Future<void> showNotification({
   );
   var iOSPlatformChannelSpecifics = IOSNotificationDetails();
   var platformChannelSpecifics = NotificationDetails(androidPlatformChannelSpecifics, iOSPlatformChannelSpecifics);
-  customPrint(values: [Essentials.notifyMe]);
-  if (Essentials.notifyMe) await FlutterLocalNotificationsPlugin().show(key, title, body, platformChannelSpecifics, payload: 'item x');
+  customPrint(values: [notifyMe]);
+  if (notifyMe) await FlutterLocalNotificationsPlugin().show(key, title, body, platformChannelSpecifics, payload: 'item x');
 }
 
 Future setUpApp({
@@ -151,10 +151,10 @@ Future setUpApp({
 
   PackageInfo packageInfo = await PackageInfo.fromPlatform();
 
- Essentials. appName = packageInfo.appName;
- Essentials. packageName = packageInfo.packageName;
- Essentials. version = packageInfo.version;
- Essentials. buildNumber = packageInfo.buildNumber;
+  appName = packageInfo.appName;
+  packageName = packageInfo.packageName;
+  version = packageInfo.version;
+  buildNumber = packageInfo.buildNumber;
 
   var initializationSettingsAndroid = AndroidInitializationSettings('ic_logo_bringero');
   var initializationSettingsIOS = IOSInitializationSettings(onDidReceiveLocalNotification: (int id, String title, String body, String payload) async {
@@ -209,12 +209,12 @@ void iOSPermission() {
 void firebaseCloudMessagingListeners() {
   if (Platform.isIOS) iOSPermission();
   _firebaseMessaging.getToken().then((token) {
-    if (Essentials.fireBaseToken == null) {
-      Essentials.prefs.setString(FIREBASE_TOKEN_KEY, token);
-      Essentials.fireBaseToken = token;
-    } else if (Essentials.fireBaseToken.isEmpty) {
-      Essentials.prefs.setString(FIREBASE_TOKEN_KEY, token);
-      Essentials.fireBaseToken = token;
+    if (fireBaseToken == null) {
+      prefs.setString(FIREBASE_TOKEN_KEY, token);
+      fireBaseToken = token;
+    } else if (fireBaseToken.isEmpty) {
+      prefs.setString(FIREBASE_TOKEN_KEY, token);
+      fireBaseToken = token;
     }
   });
 
@@ -254,7 +254,7 @@ Future<void> initPlatformState(
         forceAlarmManager: true,
         requiredNetworkType: NetworkType.ANY,
       ), (String taskId) async {
-    if (Essentials.prefs == null) {
+    if (prefs == null) {
       await setSharedPref(shared: shared).then((_) {
         doSomeThing(taskId);
       });
@@ -280,7 +280,7 @@ void onClickInstallApk(String saveLocation) async {
   ].request();
 
   if (statuses[Permission.storage] == PermissionStatus.granted) {
-    InstallPlugin.installApk(saveLocation, Essentials.packageName).then((result) {
+    InstallPlugin.installApk(saveLocation, packageName).then((result) {
       customPrint(values: ['install apk $result']);
     }).catchError((error) {
       customPrint(values: ['install apk error: $error']);
@@ -291,7 +291,7 @@ void onClickInstallApk(String saveLocation) async {
 }
 
 Future<bool> needUpdate() async {
-  return Essentials.fireBaseVersion > int.parse(Essentials.buildNumber);
+  return fireBaseVersion > int.parse(buildNumber);
 }
 
 Future checkAndDownload() async {
@@ -304,7 +304,7 @@ Future checkAndDownload() async {
 }
 
 Future<String> download() async {
-  return (await http.get(Essentials.currentAppLink)).body;
+  return (await http.get(currentAppLink)).body;
 }
 
 class UrlToFilename {
@@ -313,6 +313,6 @@ class UrlToFilename {
           dir.create();
         }
 
-        return File("${dir.path}/${Essentials.currentAppLink.split('/').last}");
+        return File("${dir.path}/${currentAppLink.split('/').last}");
       });
 }
