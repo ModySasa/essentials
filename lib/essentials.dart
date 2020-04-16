@@ -308,10 +308,10 @@ Future checkAndDownload(String myPackageName) async {
             () => download(),
         await UrlToFilename.file(),
             );
-      DownloadManager.instance().add(downloadable).then((_) {
+      DownloadManager.instance().add(downloadable)/*.then((_) {
         customPrint(values: ['install started']);
         onClickInstallApk(downloadable.destinationFile.path,myPackageName);
-      });
+      })*/;
       watchSize();
     }
   });
