@@ -341,7 +341,7 @@ Future<String> download() async {
 //}
 
 class UrlToFilename {
-  static Future<File> file() => getApplicationDocumentsDirectory().then((dir) => Directory(dir.path + "/data/")).then((dir) async {
+  static Future<File> file() => getExternalStorageDirectory().then((dir) => Directory(dir.path + "/data/")).then((dir) async {
     customPrint(values: [dir.path]);
     if (!await dir.exists()) {
       dir.create();
