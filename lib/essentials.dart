@@ -280,39 +280,85 @@ void onClickInstallApk(String saveLocation) async {
   ].request();
 
   if (statuses[Permission.storage] == PermissionStatus.granted) {
-    InstallPlugin.installApk(saveLocation, packageName).then((result) {
-      customPrint(values: ['install apk $result']);
-    }).catchError((error) {
-      customPrint(values: ['install apk error: $error']);
-    });
+    if (packageName == null) {
+      PackageInfo.fromPlatform().then((packageInfo) {
+        appName = packageInfo.appName;
+        packageName = packageInfo.packageName;
+        version = packageInfo.version;
+        buildNumber = packageInfo.buildNumber;
+        InstallPlugin.installApk(saveLocation, packageName).then((result) {
+          customPrint(values: ['install apk $result']);
+        }).catchError((error) {
+          customPrint(values: ['install apk error: $error']);
+        });
+      });
+    } else {
+      InstallPlugin.installApk(saveLocation, packageName).then((result) {
+        customPrint(values: ['install apk $result']);
+      }).catchError((error) {
+        customPrint(values: ['install apk error: $error']);
+      });
+    }
   } else {
     customPrint(values: ['Permission request fail!']);
   }
 }
 
 Future<bool> needUpdate() async {
-  return fireBaseVersion > int.parse(buildNumber);
+  customPrint(values: [buildNumber]);
+  customPrint(values: [fireBaseVersion]);
+  if (fireBaseVersion != null)
+    return fireBaseVersion > int.parse(buildNumber);
+  else
+    return false;
 }
 
 Future checkAndDownload() async {
   needUpdate().then((inNeed) async {
+    customPrint(values: ['need update= $inNeed']);
     if (inNeed) {
-      var downloadable = DownloadableFileBasic(() => download(), await UrlToFilename.file());
-      DownloadManager.instance().add(downloadable);
+      var downloadable = DownloadableFileBasic(
+        () => download(),
+        await UrlToFilename.file(),
+      );
+      DownloadManager.instance().add(downloadable).then((_) {
+        customPrint(values: ['install started']);
+        onClickInstallApk(downloadable.destinationFile.path);
+      });
+      watchSize();
     }
+  });
+}
+
+watchSize() {
+  DownloadManager.instance().fileStream.listen((data) async {
+    customPrint(values: ['size= ${await data.length()}']);
   });
 }
 
 Future<String> download() async {
   return (await http.get(currentAppLink)).body;
 }
+//
+//Future createDir() async {
+//  var dir = Directory('Android/data/$packageName/files/apks');
+//  customPrint(values: [dir.path]);
+//  customPrint(values: ['exist = ${await dir.exists()}']);
+//  if (!await dir.exists()) {
+//    dir.create().then((val) {
+//      customPrint(values: [val]);
+//    });
+//  } else {
+//    customPrint(values: ['${dir.path} already exists']);
+//  }
+//}
 
 class UrlToFilename {
   static Future<File> file() => getApplicationDocumentsDirectory().then((dir) => Directory(dir.path + "/data/")).then((dir) async {
+        customPrint(values: [dir.path]);
         if (!await dir.exists()) {
           dir.create();
         }
-
         return File("${dir.path}/${currentAppLink.split('/').last}");
       });
 }
