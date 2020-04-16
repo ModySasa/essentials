@@ -318,8 +318,8 @@ Future checkAndDownload(String myPackageName) async {
 }
 
 watchSize() {
-  DownloadManager.instance().fileStream.listen((data) async {
-    customPrint(values: ['size= ${await data.length()}']);
+  DownloadManager.instance().fileStream.listen((data) {
+    customPrint(values: ['size= ${data.lengthSync()}']);
   });
 }
 
