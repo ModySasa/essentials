@@ -269,7 +269,7 @@ Future<void> initPlatformState(
   if (!mounted) return;
 }
 
-void onClickInstallApk(String saveLocation) async {
+void onClickInstallApk(String saveLocation,String myPackageName) async {
   if (saveLocation.isEmpty) {
     print('make sure the apk file is set');
     return;
@@ -280,25 +280,12 @@ void onClickInstallApk(String saveLocation) async {
   ].request();
 
   if (statuses[Permission.storage] == PermissionStatus.granted) {
-    if (packageName == null) {
-      PackageInfo.fromPlatform().then((packageInfo) {
-        appName = packageInfo.appName;
-        packageName = packageInfo.packageName;
-        version = packageInfo.version;
-        buildNumber = packageInfo.buildNumber;
-        InstallPlugin.installApk(saveLocation, packageName).then((result) {
-          customPrint(values: ['install apk $result']);
-        }).catchError((error) {
-          customPrint(values: ['install apk error: $error']);
-        });
-      });
-    } else {
-      InstallPlugin.installApk(saveLocation, packageName).then((result) {
-        customPrint(values: ['install apk $result']);
-      }).catchError((error) {
-        customPrint(values: ['install apk error: $error']);
-      });
-    }
+
+    InstallPlugin.installApk(saveLocation, myPackageName).then((result) {
+      customPrint(values: ['install apk $result']);
+    }).catchError((error) {
+      customPrint(values: ['install apk error: $error']);
+    });
   } else {
     customPrint(values: ['Permission request fail!']);
   }
@@ -313,17 +300,17 @@ Future<bool> needUpdate() async {
     return false;
 }
 
-Future checkAndDownload() async {
+Future checkAndDownload(String myPackageName) async {
   needUpdate().then((inNeed) async {
     customPrint(values: ['need update= $inNeed']);
     if (inNeed) {
       var downloadable = DownloadableFileBasic(
-        () => download(),
+            () => download(),
         await UrlToFilename.file(),
-      );
+            );
       DownloadManager.instance().add(downloadable).then((_) {
         customPrint(values: ['install started']);
-        onClickInstallApk(downloadable.destinationFile.path);
+        onClickInstallApk(downloadable.destinationFile.path,myPackageName);
       });
       watchSize();
     }
@@ -355,10 +342,10 @@ Future<String> download() async {
 
 class UrlToFilename {
   static Future<File> file() => getApplicationDocumentsDirectory().then((dir) => Directory(dir.path + "/data/")).then((dir) async {
-        customPrint(values: [dir.path]);
-        if (!await dir.exists()) {
-          dir.create();
-        }
-        return File("${dir.path}/${currentAppLink.split('/').last}");
-      });
+    customPrint(values: [dir.path]);
+    if (!await dir.exists()) {
+      dir.create();
+    }
+    return File("${dir.path}/${currentAppLink.split('/').last}");
+  });
 }
