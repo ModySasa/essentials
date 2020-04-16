@@ -269,7 +269,7 @@ Future<void> initPlatformState(
   if (!mounted) return;
 }
 
-void onClickInstallApk(String saveLocation,String myPackageName) async {
+void onClickInstallApk(String saveLocation, String myPackageName) async {
   if (saveLocation.isEmpty) {
     print('make sure the apk file is set');
     return;
@@ -280,7 +280,6 @@ void onClickInstallApk(String saveLocation,String myPackageName) async {
   ].request();
 
   if (statuses[Permission.storage] == PermissionStatus.granted) {
-
     InstallPlugin.installApk(saveLocation, myPackageName).then((result) {
       customPrint(values: ['install apk $result']);
     }).catchError((error) {
@@ -305,21 +304,25 @@ Future checkAndDownload(String myPackageName) async {
     customPrint(values: ['need update= $inNeed']);
     if (inNeed) {
       var downloadable = DownloadableFileBasic(
-            () => download(),
+        () => download(),
         await UrlToFilename.file(),
-            );
-      DownloadManager.instance().add(downloadable)/*.then((_) {
+      );
+      DownloadManager.instance().add(
+              downloadable) /*.then((_) {
         customPrint(values: ['install started']);
         onClickInstallApk(downloadable.destinationFile.path,myPackageName);
-      })*/;
-      watchSize();
+      })*/
+          ;
+      watchSize(downloadable, myPackageName);
     }
   });
 }
 
-watchSize() {
+watchSize(downloadable, String myPackageName) {
   DownloadManager.instance().fileStream.listen((data) {
     customPrint(values: ['size= ${data.lengthSync()}']);
+  }).onDone(() {
+    onClickInstallApk(downloadable.destinationFile.path, myPackageName);
   });
 }
 
@@ -342,10 +345,10 @@ Future<String> download() async {
 
 class UrlToFilename {
   static Future<File> file() => getExternalStorageDirectory().then((dir) => Directory(dir.path + "/data/")).then((dir) async {
-    customPrint(values: [dir.path]);
-    if (!await dir.exists()) {
-      dir.create();
-    }
-    return File("${dir.path}/${currentAppLink.split('/').last}");
-  });
+        customPrint(values: [dir.path]);
+        if (!await dir.exists()) {
+          dir.create();
+        }
+        return File("${dir.path}/${currentAppLink.split('/').last}");
+      });
 }
