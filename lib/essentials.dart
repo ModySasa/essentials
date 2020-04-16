@@ -299,7 +299,7 @@ Future<bool> needUpdate() async {
     return false;
 }
 
-Future checkAndDownload(String myPackageName) async {
+Future checkAndDownload(String myPackageName,watchSize) async {
   needUpdate().then((inNeed) async {
     customPrint(values: ['need update= $inNeed']);
     if (inNeed) {
@@ -317,12 +317,16 @@ Future checkAndDownload(String myPackageName) async {
     }
   });
 }
+/*
 
 watchSize(downloadable, String myPackageName) {
-  DownloadManager.instance().fileStream.doOnDone(() {
+  DownloadManager.instance().fileStream.listen((data) {
+    customPrint(values: ['size= ${data.lengthSync()}']);
+  }).onDone(() {
     onClickInstallApk(downloadable.destinationFile.path, myPackageName);
   });
 }
+*/
 
 Future<String> download() async {
   return (await http.get(currentAppLink)).body;
