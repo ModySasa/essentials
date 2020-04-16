@@ -319,9 +319,7 @@ Future checkAndDownload(String myPackageName) async {
 }
 
 watchSize(downloadable, String myPackageName) {
-  DownloadManager.instance().fileStream.listen((data) {
-    customPrint(values: ['size= ${data.lengthSync()}']);
-  }).onDone(() {
+  DownloadManager.instance().fileStream.doOnDone(() {
     onClickInstallApk(downloadable.destinationFile.path, myPackageName);
   });
 }
