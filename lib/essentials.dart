@@ -269,7 +269,7 @@ Future<void> initPlatformState(
   if (!mounted) return;
 }
 
-void onClickInstallApk(String saveLocation, String myPackageName) async {
+Future onClickInstallApk(String saveLocation, String myPackageName) async {
   if (saveLocation.isEmpty) {
     print('make sure the apk file is set');
     return;
