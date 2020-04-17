@@ -311,8 +311,10 @@ Future downloadAPKFile(
   String myPackageName,
 ) async {
   Dio dio = new Dio();
-  await dio.download(currentAppLink, await UrlToFilename.file(), onReceiveProgress: (i, maxProgress) async {
+  await dio.download(currentAppLink, await UrlToFilename.file(), onReceiveProgress: (currentProgress, maxProgress) async {
     if (maxProgress != -1) {
+      int i = 0;
+      if (currentProgress > i) i = currentProgress;
       customPrint(values: ['Donwloading progress ${(i * 100 / maxProgress).toStringAsFixed(0)} %']);
       await Future.delayed(Duration(milliseconds: 500), () async {
         var androidPlatformChannelSpecifics = AndroidNotificationDetails(
