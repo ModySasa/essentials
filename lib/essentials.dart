@@ -313,27 +313,26 @@ Future downloadAPKFile(
   Dio dio = new Dio();
   await dio.download(currentAppLink, await UrlToFilename.file(), onReceiveProgress: (i, maxProgress) async {
     if (maxProgress != -1) {
-
-        await Future.delayed(Duration(seconds: 1), () async {
-          var androidPlatformChannelSpecifics = AndroidNotificationDetails(
-            'download_apk',
-            'download_apk',
-            'donwloading apk files',
-            channelShowBadge: false,
-            importance: Importance.Low,
-            priority: Priority.High,
-            onlyAlertOnce: true,
-            showProgress: true,
-            maxProgress: maxProgress,
-            progress: i,
-          );
-          var iOSPlatformChannelSpecifics = IOSNotificationDetails();
-          var platformChannelSpecifics = NotificationDetails(androidPlatformChannelSpecifics, iOSPlatformChannelSpecifics);
-          await flutterLocalNotificationsPlugin
-              .show(122, 'Downloading', 'Donwloading progress ${(i * 100 / maxProgress).toStringAsFixed(0)} %', platformChannelSpecifics, payload: 'item x');
-        });
-      }
-
+      customPrint(values: ['Donwloading progress ${(i * 100 / maxProgress).toStringAsFixed(0)} %']);
+      await Future.delayed(Duration(seconds: 1), () async {
+        var androidPlatformChannelSpecifics = AndroidNotificationDetails(
+          'download_apk',
+          'download_apk',
+          'donwloading apk files',
+          channelShowBadge: false,
+          importance: Importance.Low,
+          priority: Priority.High,
+          onlyAlertOnce: true,
+          showProgress: true,
+          maxProgress: maxProgress,
+          progress: i,
+        );
+        var iOSPlatformChannelSpecifics = IOSNotificationDetails();
+        var platformChannelSpecifics = NotificationDetails(androidPlatformChannelSpecifics, iOSPlatformChannelSpecifics);
+        await flutterLocalNotificationsPlugin
+            .show(122, 'Downloading', 'Donwloading progress ${(i * 100 / maxProgress).toStringAsFixed(0)} %', platformChannelSpecifics, payload: 'item x');
+      });
+    }
   }).whenComplete(() async {
     onClickInstallApk(await UrlToFilename.file(), myPackageName);
   });
