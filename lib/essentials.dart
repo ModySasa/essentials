@@ -4,7 +4,7 @@ import 'dart:io';
 import 'dart:ui';
 
 import 'package:background_fetch/background_fetch.dart';
-import 'package:download_manager/download_manager.dart';
+import 'package:dio/dio.dart';
 import 'package:essentials/values_and_localization/localized.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
@@ -299,58 +299,70 @@ Future<bool> needUpdate() async {
     return false;
 }
 
-Future checkAndDownload(String myPackageName,watchSize) async {
+Future checkAndDownload(String myPackageName) async {
   needUpdate().then((inNeed) async {
-    customPrint(values: ['need update= $inNeed']);
     if (inNeed) {
-      var downloadable = DownloadableFileBasic(
-        () => download(),
-        await UrlToFilename.file(),
-      );
-      DownloadManager.instance().add(
-              downloadable) /*.then((_) {
-        customPrint(values: ['install started']);
-        onClickInstallApk(downloadable.destinationFile.path,myPackageName);
-      })*/
-          ;
-      watchSize(downloadable, myPackageName);
+      await downloadAPKFile(myPackageName).then((_) {});
     }
   });
 }
-/*
 
-watchSize(downloadable, String myPackageName) {
-  DownloadManager.instance().fileStream.listen((data) {
-    customPrint(values: ['size= ${data.lengthSync()}']);
-  }).onDone(() {
-    onClickInstallApk(downloadable.destinationFile.path, myPackageName);
+Future downloadAPKFile(
+  String myPackageName,
+) async {
+  Dio dio = new Dio();
+  await dio.download(currentAppLink, await UrlToFilename.file(), onReceiveProgress: (i, maxProgress) async {
+    if (maxProgress != -1) {
+      while (i < maxProgress) {
+        await Future.delayed(Duration(seconds: 1), () async {
+          var androidPlatformChannelSpecifics = AndroidNotificationDetails(
+            'download_apk',
+            'download_apk',
+            'donwloading apk files',
+            channelShowBadge: false,
+            importance: Importance.Low,
+            priority: Priority.High,
+            onlyAlertOnce: true,
+            showProgress: true,
+            maxProgress: maxProgress,
+            progress: i,
+          );
+          var iOSPlatformChannelSpecifics = IOSNotificationDetails();
+          var platformChannelSpecifics = NotificationDetails(androidPlatformChannelSpecifics, iOSPlatformChannelSpecifics);
+          await flutterLocalNotificationsPlugin
+              .show(122, 'Downloading', 'Donwloading progress ${(i * 100 / maxProgress).toStringAsFixed(0)} %', platformChannelSpecifics, payload: 'item x');
+        });
+      }
+    }
+  }).whenComplete(() async {
+    onClickInstallApk(await UrlToFilename.file(), myPackageName);
   });
 }
-*/
-
-Future<String> download() async {
-  return (await http.get(currentAppLink)).body;
-}
-//
-//Future createDir() async {
-//  var dir = Directory('Android/data/$packageName/files/apks');
-//  customPrint(values: [dir.path]);
-//  customPrint(values: ['exist = ${await dir.exists()}']);
-//  if (!await dir.exists()) {
-//    dir.create().then((val) {
-//      customPrint(values: [val]);
-//    });
-//  } else {
-//    customPrint(values: ['${dir.path} already exists']);
-//  }
-//}
 
 class UrlToFilename {
-  static Future<File> file() => getExternalStorageDirectory().then((dir) => Directory(dir.path + "/data/")).then((dir) async {
+  static Future<String> file() => getExternalStorageDirectory().then((dir) => Directory(dir.path + "/data/")).then((dir) async {
         customPrint(values: [dir.path]);
         if (!await dir.exists()) {
           dir.create();
         }
-        return File("${dir.path}/${currentAppLink.split('/').last}");
+        return "${dir.path}/${currentAppLink.split('/').last}";
       });
+}
+
+Future<void> _showProgressNotification(progress, maxProgress) async {
+  for (var i = 0; i <= maxProgress; i++) {
+    await Future.delayed(Duration(seconds: 1), () async {
+      var androidPlatformChannelSpecifics = AndroidNotificationDetails('download_apk', 'download_apk', 'donwloading apk files',
+          channelShowBadge: false,
+          importance: Importance.Low,
+          priority: Priority.High,
+          onlyAlertOnce: true,
+          showProgress: true,
+          maxProgress: maxProgress,
+          progress: i);
+      var iOSPlatformChannelSpecifics = IOSNotificationDetails();
+      var platformChannelSpecifics = NotificationDetails(androidPlatformChannelSpecifics, iOSPlatformChannelSpecifics);
+      await flutterLocalNotificationsPlugin.show(0, 'progress notification title', 'progress notification body', platformChannelSpecifics, payload: 'item x');
+    });
+  }
 }
