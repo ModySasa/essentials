@@ -311,9 +311,9 @@ Future downloadAPKFile(
   String myPackageName,
 ) async {
   Dio dio = new Dio();
+  int i = 0;
   await dio.download(currentAppLink, await UrlToFilename.file(), onReceiveProgress: (currentProgress, maxProgress) async {
     if (maxProgress != -1) {
-      int i = 0;
       if (currentProgress > i) i = currentProgress;
       customPrint(values: ['Donwloading progress ${(i * 100 / maxProgress).toStringAsFixed(0)} %']);
       await Future.delayed(Duration(milliseconds: 500), () async {
@@ -322,6 +322,7 @@ Future downloadAPKFile(
           'download_apk',
           'donwloading apk files',
           channelShowBadge: false,
+          ongoing: i < 99,
           importance: Importance.Low,
           priority: Priority.High,
           onlyAlertOnce: true,
