@@ -393,7 +393,7 @@ Future<void> _downloadFile(String imagePath) async {
   }
 }
 
-Future<String> _uploadFile(String imagePath, String userName, String imageName) async {
+Future<String> uploadFile(String imagePath, String userName, String imageName) async {
   final File file = await File(imagePath).create();
   final StorageReference ref = storageRef.child('images').child('$userName$imageName');
   final StorageUploadTask uploadTask = ref.putFile(
