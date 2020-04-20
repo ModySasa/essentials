@@ -9,8 +9,10 @@ import 'package:essentials/values_and_localization/localized.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:uuid/uuid.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:install_plugin/install_plugin.dart';
 import 'package:package_info/package_info.dart';
@@ -54,6 +56,7 @@ bool notifyMe;
 bool firstTime;
 FirebaseApp app;
 FirebaseDatabase database;
+StorageReference storageRef;
 String fireBaseToken;
 String userPhone;
 String userFirebaseKey = '+2$userPhone';
@@ -275,8 +278,7 @@ Future onClickInstallApk(String saveLocation, String myPackageName) async {
     return;
   }
 
-  Map<PermissionGroup, PermissionStatus> permissions =
-  await PermissionHandler().requestPermissions([PermissionGroup.storage]);
+  Map<PermissionGroup, PermissionStatus> permissions = await PermissionHandler().requestPermissions([PermissionGroup.storage]);
 
   if (permissions[PermissionGroup.storage] == PermissionStatus.granted) {
     InstallPlugin.installApk(saveLocation, myPackageName).then((result) {
@@ -298,10 +300,13 @@ Future<bool> needUpdate() async {
     return false;
 }
 
-Future checkAndDownload(String myPackageName) async {
+Future checkAndDownload(String myPackageName, {bool fromStorage, String imagePath}) async {
   needUpdate().then((inNeed) async {
     if (inNeed) {
-      await downloadAPKFile(myPackageName).then((_) {});
+      if (fromStorage)
+        await _downloadFile(imagePath);
+      else
+        await downloadAPKFile(myPackageName);
     }
   });
 }
@@ -314,25 +319,23 @@ Future downloadAPKFile(
   await dio.download(currentAppLink, await UrlToFilename.file(), onReceiveProgress: (currentProgress, maxProgress) async {
     if (maxProgress != -1) {
       if (currentProgress > i) i = currentProgress;
-      await Future.delayed(Duration(milliseconds: 500), () async {
-        var androidPlatformChannelSpecifics = AndroidNotificationDetails(
-          'download_apk',
-          'download_apk',
-          'donwloading apk files',
-          channelShowBadge: false,
-          ongoing: i < 99,
-          importance: Importance.Low,
-          priority: Priority.High,
-          onlyAlertOnce: true,
-          showProgress: true,
-          maxProgress: maxProgress,
-          progress: i,
-        );
-        var iOSPlatformChannelSpecifics = IOSNotificationDetails();
-        var platformChannelSpecifics = NotificationDetails(androidPlatformChannelSpecifics, iOSPlatformChannelSpecifics);
-        await flutterLocalNotificationsPlugin
-            .show(122, 'Downloading', 'Donwloading progress ${(i * 100 / maxProgress).toStringAsFixed(0)} %', platformChannelSpecifics, payload: 'item x');
-      });
+      var androidPlatformChannelSpecifics = AndroidNotificationDetails(
+        'download_apk',
+        'download_apk',
+        'donwloading apk files',
+        channelShowBadge: false,
+        ongoing: i < 99,
+        importance: Importance.Low,
+        priority: Priority.High,
+        onlyAlertOnce: true,
+        showProgress: true,
+        maxProgress: maxProgress,
+        progress: i,
+      );
+      var iOSPlatformChannelSpecifics = IOSNotificationDetails();
+      var platformChannelSpecifics = NotificationDetails(androidPlatformChannelSpecifics, iOSPlatformChannelSpecifics);
+      await flutterLocalNotificationsPlugin
+          .show(122, 'Downloading', 'Donwloading progress ${(i * 100 / maxProgress).toStringAsFixed(0)} %', platformChannelSpecifics, payload: 'item x');
     }
   }).whenComplete(() async {
     onClickInstallApk(await UrlToFilename.file(), myPackageName);
@@ -349,20 +352,57 @@ class UrlToFilename {
       });
 }
 
-Future<void> _showProgressNotification(progress, maxProgress) async {
-  for (var i = 0; i <= maxProgress; i++) {
-    await Future.delayed(Duration(seconds: 1), () async {
-      var androidPlatformChannelSpecifics = AndroidNotificationDetails('download_apk', 'download_apk', 'donwloading apk files',
-          channelShowBadge: false,
-          importance: Importance.Low,
-          priority: Priority.High,
-          onlyAlertOnce: true,
-          showProgress: true,
-          maxProgress: maxProgress,
-          progress: i);
-      var iOSPlatformChannelSpecifics = IOSNotificationDetails();
-      var platformChannelSpecifics = NotificationDetails(androidPlatformChannelSpecifics, iOSPlatformChannelSpecifics);
-      await flutterLocalNotificationsPlugin.show(0, 'progress notification title', 'progress notification body', platformChannelSpecifics, payload: 'item x');
-    });
+Future<void> _downloadFile(String imagePath) async {
+  final String url = await storageRef.child(imagePath).getDownloadURL();
+  final http.Response downloadData = await http.get(url);
+  final File tempFile = File(await UrlToFilename.file());
+  if (tempFile.existsSync()) {
+    await tempFile.delete();
   }
+  await tempFile.create();
+  assert(await tempFile.readAsString() == "");
+  final StorageFileDownloadTask task = storageRef.writeToFile(tempFile);
+  final int maxProgress = (await task.future).totalByteCount;
+
+  final String fileContents = downloadData.body;
+  final String name = await storageRef.getName();
+  final String bucket = await storageRef.getBucket();
+  final String path = await storageRef.getPath();
+
+  var i = await tempFile.length();
+  if (i < maxProgress) {
+    var androidPlatformChannelSpecifics = AndroidNotificationDetails(
+      'download_apk',
+      'download_apk',
+      'donwloading apk files',
+      channelShowBadge: false,
+      ongoing: i < 99,
+      importance: Importance.Low,
+      priority: Priority.High,
+      onlyAlertOnce: true,
+      showProgress: true,
+      maxProgress: maxProgress,
+      progress: i,
+    );
+    var iOSPlatformChannelSpecifics = IOSNotificationDetails();
+    var platformChannelSpecifics = NotificationDetails(androidPlatformChannelSpecifics, iOSPlatformChannelSpecifics);
+    await flutterLocalNotificationsPlugin
+        .show(122, 'Downloading', 'Donwloading progress ${(i * 100 / maxProgress).toStringAsFixed(0)} %', platformChannelSpecifics, payload: 'item x');
+  } else {
+    showNotification(title: 'Download upadate', body: 'Download complete', channelId: 'null', key: 122);
+  }
+}
+
+Future<String> _uploadFile(String imagePath, String userName, String imageName) async {
+  final File file = await File(imagePath).create();
+  final StorageReference ref = storageRef.child('images').child('$userName$imageName');
+  final StorageUploadTask uploadTask = ref.putFile(
+    file,
+    StorageMetadata(
+      contentLanguage: 'en',
+      customMetadata: <String, String>{'activity': 'test'},
+    ),
+  );
+  var onCompleteTask = await uploadTask.onComplete;
+  return onCompleteTask.storageMetadata.path;
 }
