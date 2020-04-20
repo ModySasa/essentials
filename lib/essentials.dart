@@ -56,6 +56,7 @@ bool notifyMe;
 bool firstTime;
 FirebaseApp app;
 FirebaseDatabase database;
+FirebaseStorage storage;
 StorageReference storageRef;
 String fireBaseToken;
 String userPhone;
