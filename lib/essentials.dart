@@ -275,11 +275,10 @@ Future onClickInstallApk(String saveLocation, String myPackageName) async {
     return;
   }
 
-  Map<Permission, PermissionStatus> statuses = await [
-    Permission.storage,
-  ].request();
+  Map<PermissionGroup, PermissionStatus> permissions =
+  await PermissionHandler().requestPermissions([PermissionGroup.storage]);
 
-  if (statuses[Permission.storage] == PermissionStatus.granted) {
+  if (permissions[PermissionGroup.storage] == PermissionStatus.granted) {
     InstallPlugin.installApk(saveLocation, myPackageName).then((result) {
       customPrint(values: ['install apk $result']);
     }).catchError((error) {
