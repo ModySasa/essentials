@@ -405,5 +405,5 @@ Future<String> uploadFile(String imagePath, String userName, String imageName) a
     ),
   );
   var onCompleteTask = await uploadTask.onComplete;
-  return onCompleteTask.storageMetadata.path;
+  return onCompleteTask.uploadSessionUri.toString();
 }
